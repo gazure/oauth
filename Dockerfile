@@ -2,8 +2,11 @@ FROM golang:1.10
 
 WORKDIR /go/src/github.com/gazure/oauth
 RUN go get -d -v golang.org/x/net/html \
-    && go get github.com/gin-gonic/gin
-COPY ./ ./
+    && go get -u github.com/golang/dep/...
+COPY Gopkg.lock .
+COPY Gopkg.toml .
+RUN dep ensure --vendor-only
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
 FROM alpine:latest

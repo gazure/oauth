@@ -1,0 +1,14 @@
+version: "3"
+services:
+    mysql:
+        image: mysql:5.7
+        environment:
+            - MYSQL_ROOT_PASSWORD=test123
+
+    oauth:
+        image: oauth:latest
+        build:
+            context: ./
+        environment:
+            - FOO=bar
+

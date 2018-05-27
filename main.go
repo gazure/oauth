@@ -3,6 +3,13 @@ package main
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/dgrijalva/jwt-go"
+	"time"
+	"io/ioutil"
+	"fmt"
+	"crypto/rsa"
 )
 
 const paramClientId = "client_id"
@@ -22,6 +29,22 @@ var USERS = []user{
 	{name: "Jim", password: "password"},
 }
 
+var rsaCertificate *rsa.PrivateKey
+
+func fatal(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+func loadCertificate() {
+	b, err := ioutil.ReadFile("./keys/jwtRS256.key")
+	fatal(err)
+
+	rsaCertificate, err = jwt.ParseRSAPrivateKeyFromPEM(b)
+	fatal(err)
+}
+
 func validateClientCredentials(clientId string, clientSecret string) error {
 	err := errors.New("invalid user name or password")
 	for _, element := range USERS {
@@ -35,6 +58,17 @@ func validateClientCredentials(clientId string, clientSecret string) error {
 	return err
 }
 
+func issueToken(clientId string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+		"sub": clientId,
+		"nbf": time.Now().Unix(),
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+
+	tokenStr, err := token.SignedString(rsaCertificate)
+	return tokenStr, err
+}
+
 func badRequest(c *gin.Context) {
 	c.JSON(400, gin.H{
 		"error": "no grant_type specified",
@@ -42,18 +76,25 @@ func badRequest(c *gin.Context) {
 }
 
 func handleClientCredentials(c *gin.Context) {
-	err := validateClientCredentials(c.PostForm(paramClientId), c.PostForm(paramClientSecret))
+	clientId := c.PostForm(paramClientId)
+	err := validateClientCredentials(clientId, c.PostForm(paramClientSecret))
 	if err != nil {
 		c.JSON(401, gin.H{
 			"error": "not authorized",
 		})
 		return
 	}
+	token, err := issueToken(clientId)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+	}
 	c.JSON(200, gin.H{
-		"access_token":  "foo",
+		"access_token":  token,
 		"refresh_token": "bar",
 		"scope":         c.PostForm(postParamScope),
-		"expires_in":    "never",
+		"expires_in":    3600,
 	})
 
 }
@@ -76,6 +117,12 @@ func health(c *gin.Context) {
 }
 
 func main() {
+	loadCertificate()
+	db, err := gorm.Open("mysql", "root:test123@/oauth?charset=utf8&parseTime=True&loc=Local")
+	if err != nil {
+		fmt.Println("Failed to connect to the database")
+	}
+	db.Close()
 	r := gin.Default()
 	r.POST("/token", token)
 	r.GET("/health", health)

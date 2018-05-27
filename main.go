@@ -3,12 +3,9 @@ package main
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 	"io/ioutil"
-	"fmt"
 	"crypto/rsa"
 )
 
@@ -118,11 +115,6 @@ func health(c *gin.Context) {
 
 func main() {
 	loadCertificate()
-	db, err := gorm.Open("mysql", "root:test123@/oauth?charset=utf8&parseTime=True&loc=Local")
-	if err != nil {
-		fmt.Println("Failed to connect to the database")
-	}
-	db.Close()
 	r := gin.Default()
 	r.POST("/token", token)
 	r.GET("/health", health)

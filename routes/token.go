@@ -6,26 +6,38 @@ import (
 	"github.com/gazure/oauth/token-generators"
 )
 
-var USERS = []user{
-	{name: "Grant", password: "987654321"},
-	{name: "Jim", password: "password"},
-}
-
 const paramClientId = "client_id"
 const paramClientSecret = "client_secret"
 const postParamScope = "scope"
 const paramGrantType = "grant_type"
 
-const GrantTypeClientCredentials = "client_credentials"
+const grantTypeClientCredentials = "client_credentials"
 
 type user struct {
 	name     string
 	password string // TODO: not this
 }
 
+var users = map[string]user{
+	"Grant": {name: "Grant", password: "987654321"},
+	"Jim":   {name: "Jim", password: "password"},
+}
+
+type handler func(ctx *gin.Context)
+
+var handlerMap = map[string]handler{
+	grantTypeClientCredentials: handleClientCredentials,
+}
+
+func badRequest(c *gin.Context, message string) {
+	c.JSON(400, gin.H{
+		"error": message,
+	})
+}
+
 func validateClientCredentials(clientId string, clientSecret string) error {
 	err := errors.New("invalid user name or password")
-	for _, element := range USERS {
+	for _, element := range users {
 		if element.name == clientId {
 			if element.password != clientSecret {
 				return err
@@ -34,12 +46,6 @@ func validateClientCredentials(clientId string, clientSecret string) error {
 		}
 	}
 	return err
-}
-
-func badRequest(c *gin.Context) {
-	c.JSON(400, gin.H{
-		"error": "no grant_type specified",
-	})
 }
 
 func handleClientCredentials(c *gin.Context) {
@@ -56,6 +62,7 @@ func handleClientCredentials(c *gin.Context) {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 	c.JSON(200, gin.H{
 		"access_token":  token,
@@ -68,11 +75,9 @@ func handleClientCredentials(c *gin.Context) {
 
 func token(c *gin.Context) {
 	grantType := c.PostForm(paramGrantType)
-	if grantType == "" {
-		badRequest(c)
-		return
-	}
-	if grantType == GrantTypeClientCredentials {
-		handleClientCredentials(c)
+	if handlerFunction, ok := handlerMap[grantType]; ok {
+		handlerFunction(c)
+	} else {
+		badRequest(c, "invalid grant type specified")
 	}
 }

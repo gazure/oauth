@@ -4,6 +4,8 @@ services:
         image: mysql:5.7
         environment:
             - MYSQL_ROOT_PASSWORD=test123
+        ports:
+            - "3306:3306"
 
     oauth:
         image: oauth:latest
@@ -11,4 +13,6 @@ services:
             context: ./
         environment:
             - FOO=bar
+        ports:
+            - "8080:8080"
 

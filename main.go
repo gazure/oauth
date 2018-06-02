@@ -12,6 +12,7 @@ func main() {
 	models.Migrate()
 	routes.LoadCertificate()
 	r := gin.Default()
+	r.LoadHTMLGlob("templates/*")
 	routes.ConfigureRoutes(r)
 	r.Run()
 }

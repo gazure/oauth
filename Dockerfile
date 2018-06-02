@@ -14,4 +14,5 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=0 /go/src/github.com/gazure/oauth/app .
 COPY keys ./keys
+COPY templates ./templates
 CMD ["./app"]

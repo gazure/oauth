@@ -5,6 +5,8 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 	"github.com/dgrijalva/jwt-go"
+	"net/http"
+	"github.com/gazure/oauth/middleware"
 )
 
 var rsaCertificate *rsa.PrivateKey
@@ -15,9 +17,32 @@ func fatal(err error) {
 	}
 }
 
+func index(c *gin.Context) {
+	c.HTML(
+		http.StatusOK,
+		"index.html",
+		gin.H{
+			"title": "Home Page",
+		},
+	)
+}
+
 func ConfigureRoutes(r *gin.Engine) {
-	r.POST("/token", token)
+	r.Use(middleware.SetUserStatus)
+	r.GET("/", index)
 	r.GET("/health", health)
+	oauthRoutes := r.Group("/oauth")
+	{
+		oauthRoutes.POST("/token", token)
+	}
+	userRoutes := r.Group("/u")
+	{
+		userRoutes.GET("/logout", middleware.EnsureLoggedIn, logout)
+		userRoutes.GET("/login", middleware.EnsureNotLoggedIn, showLoginPage)
+		userRoutes.GET("/register", middleware.EnsureNotLoggedIn, showRegistrationPage)
+		userRoutes.POST("/login", middleware.EnsureNotLoggedIn, performLogin)
+		userRoutes.POST("/register", middleware.EnsureNotLoggedIn, performRegistration)
+	}
 }
 
 func LoadCertificate() {

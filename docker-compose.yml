@@ -4,6 +4,7 @@ services:
         image: mysql:5.7
         environment:
             - MYSQL_ROOT_PASSWORD=test123
+            - MYSQL_DATABASE=oauth
         ports:
             - "3306:3306"
 

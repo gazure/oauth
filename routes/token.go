@@ -23,9 +23,7 @@ var users = map[string]user{
 	"Jim":   {name: "Jim", password: "password"},
 }
 
-type handler func(ctx *gin.Context)
-
-var handlerMap = map[string]handler{
+var handlerMap = map[string]gin.HandlerFunc{
 	grantTypeClientCredentials: handleClientCredentials,
 }
 

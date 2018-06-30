@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/gazure/oauth/token-generators"
+	"github.com/gazure/oauth/models"
 )
 
 const paramClientId = "client_id"
@@ -12,16 +13,6 @@ const postParamScope = "scope"
 const paramGrantType = "grant_type"
 
 const grantTypeClientCredentials = "client_credentials"
-
-type user struct {
-	name     string
-	password string // TODO: not this
-}
-
-var users = map[string]user{
-	"Grant": {name: "Grant", password: "987654321"},
-	"Jim":   {name: "Jim", password: "password"},
-}
 
 var handlerMap = map[string]gin.HandlerFunc{
 	grantTypeClientCredentials: handleClientCredentials,
@@ -33,29 +24,26 @@ func badRequest(c *gin.Context, message string) {
 	})
 }
 
-func validateClientCredentials(clientId string, clientSecret string) error {
+func validateClientCredentials(clientId string, clientSecret string) (*models.User, error) {
 	err := errors.New("invalid user name or password")
-	for _, element := range users {
-		if element.name == clientId {
-			if element.password != clientSecret {
-				return err
-			}
-			return nil
-		}
+	user := models.GetUser(clientId)
+	if (&user).PasswordMatch(clientSecret) {
+		return &user, nil
 	}
-	return err
+	return nil, err
 }
 
 func handleClientCredentials(c *gin.Context) {
 	clientId := c.PostForm(paramClientId)
-	err := validateClientCredentials(clientId, c.PostForm(paramClientSecret))
+	clientSecret := c.PostForm(paramClientSecret)
+	userPtr, err := validateClientCredentials(clientId, clientSecret)
 	if err != nil {
 		c.JSON(401, gin.H{
 			"error": "not authorized",
 		})
 		return
 	}
-	token, err := token_generators.IssueJwt(clientId, rsaCertificate)
+	token, err := token_generators.IssueJwt(userPtr.GetId(), rsaCertificate)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -64,7 +52,7 @@ func handleClientCredentials(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{
 		"access_token":  token,
-		"refresh_token": "bar",
+		"refresh_token": nil,
 		"scope":         c.PostForm(postParamScope),
 		"expires_in":    3600,
 	})

@@ -12,8 +12,6 @@ services:
         image: oauth:latest
         build:
             context: ./
-        environment:
-            - FOO=bar
         ports:
             - "8080:8080"
 

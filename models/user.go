@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var db *gorm.DB
@@ -23,9 +24,14 @@ func Init() error {
 }
 
 type User struct {
-	Id	[]byte
+	Id       []byte
 	Name     string
-	Password string // TODO: use bcrypt
+	PasswordHash string
+}
+
+func generatePasswordHash(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
 }
 
 
@@ -39,7 +45,8 @@ func CreateUser(name string, password string) User {
 		return user
 	}
 	id, _ := uuid.NewV4().MarshalBinary()
-	user = User{Id: id, Name: name, Password: password}
+	passwordHash, _ := generatePasswordHash(password)
+	user = User{Id: id, Name: name, PasswordHash: passwordHash}
 	db.Create(user)
 	return user
 }
@@ -48,4 +55,14 @@ func GetUser(name string) User {
 	var user User
 	db.Where(&User{Name: name}).First(&user)
 	return user
+}
+
+func (u *User) GetId() string {
+	id, _ := uuid.FromBytes(u.Id)
+	return id.String()
+}
+
+func (u *User) PasswordMatch(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
+	return err == nil
 }

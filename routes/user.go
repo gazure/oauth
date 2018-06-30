@@ -8,6 +8,8 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+const httpAccept = "Accept"
+
 func showLoginPage(c *gin.Context) {
 	c.HTML(
 		http.StatusOK,
@@ -28,7 +30,6 @@ func showRegistrationPage(c *gin.Context) {
 	)
 }
 
-
 func performLogin(c *gin.Context) {
 	showLoginPage(c)
 }
@@ -39,22 +40,20 @@ func performRegistration(c *gin.Context) {
 
 	if user, err := registerNewUser(username, password); err == nil {
 		id, _ := uuid.FromBytes(user.Id)
-		id.String()
 		token, _ := token_generators.IssueJwt(id.String(), rsaCertificate)
 		c.SetCookie("token", token, 3600, "", "", false, true)
 		c.Set("is_logged_in", true)
-		c.HTML(
-			http.StatusOK,
-			"login-successful.html",
-			gin.H{
-				"title": "Successful registration",
-			},
-		)
+		render(c, http.StatusOK, gin.H{
+			"title": "successful registration",
+			"status": "SUCCESS",
+		}, "login-successful.html")
 	} else {
-		c.HTML(http.StatusBadRequest, "register.html", gin.H{
-			"ErrorTitle": "Registration Failed",
+		data := gin.H{
+			"status":       "Registration failed",
+			"ErrorTitle":   "Registration failed",
 			"ErrorMessage": err.Error(),
-		})
+		}
+		render(c, http.StatusBadRequest, data, "register.html")
 	}
 }
 
@@ -72,3 +71,14 @@ func logout(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
+func render(c *gin.Context, statusCode int, data gin.H, templateName string) {
+	loggedInInterface, _ := c.Get("is_logged_in")
+	data["is_logged_in"] = loggedInInterface.(bool)
+
+	switch c.Request.Header.Get(httpAccept) {
+	case gin.MIMEJSON:
+		c.JSON(statusCode, data)
+	default:
+		c.HTML(statusCode, templateName, data)
+	}
+}

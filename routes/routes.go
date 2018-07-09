@@ -34,6 +34,7 @@ func ConfigureRoutes(r *gin.Engine) {
 	oauthRoutes := r.Group("/oauth")
 	{
 		oauthRoutes.POST("/token", token)
+		oauthRoutes.POST("/client/register", registerNewClient)
 	}
 	userRoutes := r.Group("/u")
 	{

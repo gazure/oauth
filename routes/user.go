@@ -38,7 +38,7 @@ func performRegistration(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	if user, err := registerNewUser(username, password); err == nil {
+	if user := models.CreateUser(username, password); user != nil{
 		id, _ := uuid.FromBytes(user.Id)
 		token, _ := token_generators.IssueJwt(id.String(), rsaCertificate)
 		c.SetCookie("token", token, 3600, "", "", false, true)
@@ -51,16 +51,10 @@ func performRegistration(c *gin.Context) {
 		data := gin.H{
 			"status":       "Registration failed",
 			"ErrorTitle":   "Registration failed",
-			"ErrorMessage": err.Error(),
+			"ErrorMessage": "We don't really know!",
 		}
 		render(c, http.StatusBadRequest, data, "register.html")
 	}
-}
-
-func registerNewUser(username string, password string) (user models.User, err error) {
-	err = nil
-	user = models.CreateUser(username, password)
-	return user, err
 }
 
 func logout(c *gin.Context) {

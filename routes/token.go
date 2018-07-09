@@ -5,45 +5,46 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gazure/oauth/token-generators"
 	"github.com/gazure/oauth/models"
+	"net/http"
+	"github.com/satori/go.uuid"
+	"log"
 )
 
 const paramClientId = "client_id"
 const paramClientSecret = "client_secret"
 const postParamScope = "scope"
 const paramGrantType = "grant_type"
+const paramUsername = "username"
+const paramPassword = "password"
 
 const grantTypeClientCredentials = "client_credentials"
+const grantTypePassword = "password"
 
 var handlerMap = map[string]gin.HandlerFunc{
 	grantTypeClientCredentials: handleClientCredentials,
+	grantTypePassword:          handlePassword,
 }
 
-func badRequest(c *gin.Context, message string) {
-	c.JSON(400, gin.H{
+type oauthEntity interface {
+	GetId() string
+}
+
+func requestError(c *gin.Context, statusCode int, message string) {
+	c.JSON(statusCode, gin.H{
 		"error": message,
 	})
 }
 
-func validateClientCredentials(clientId string, clientSecret string) (*models.User, error) {
-	err := errors.New("invalid user name or password")
-	user := models.GetUser(clientId)
-	if (&user).PasswordMatch(clientSecret) {
-		return &user, nil
-	}
-	return nil, err
+func badRequest(c *gin.Context, message string) {
+	requestError(c, http.StatusBadRequest, message)
 }
 
-func handleClientCredentials(c *gin.Context) {
-	clientId := c.PostForm(paramClientId)
-	clientSecret := c.PostForm(paramClientSecret)
-	userPtr, err := validateClientCredentials(clientId, clientSecret)
-	if err != nil {
-		c.JSON(401, gin.H{
-			"error": "not authorized",
-		})
-		return
-	}
-	token, err := token_generators.IssueJwt(userPtr.GetId(), rsaCertificate)
+func unauthorizedRequest(c *gin.Context) {
+	requestError(c, http.StatusUnauthorized, "Not authorized.")
+}
+
+func renderTokenResponse(c *gin.Context, sub oauthEntity) {
+	token, err := token_generators.IssueJwt(sub.GetId(), rsaCertificate)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -56,7 +57,43 @@ func handleClientCredentials(c *gin.Context) {
 		"scope":         c.PostForm(postParamScope),
 		"expires_in":    3600,
 	})
+}
 
+func validateClientCredentials(clientId string, clientSecret string) (client *models.Client, err error) {
+	clientIdUUID, err := uuid.FromString(clientId)
+	if err != nil {
+		return
+	}
+	client = models.GetClient(clientIdUUID)
+	if client.SecretMatches(clientSecret) {
+		return
+	}
+	err = errors.New("invalid client id or secret")
+	return
+}
+
+func handleClientCredentials(c *gin.Context) {
+	clientId := c.PostForm(paramClientId)
+	clientSecret := c.PostForm(paramClientSecret)
+	user, err := validateClientCredentials(clientId, clientSecret)
+	if err != nil {
+		log.Println(err)
+		unauthorizedRequest(c)
+		return
+	}
+	renderTokenResponse(c, user)
+}
+
+func handlePassword(c *gin.Context) {
+	username := c.PostForm(paramUsername)
+	password := c.PostForm(paramPassword)
+
+	user := models.GetUser(username)
+	if user == nil || !user.PasswordMatch(password) {
+		unauthorizedRequest(c)
+		return
+	}
+	renderTokenResponse(c, user)
 }
 
 func token(c *gin.Context) {

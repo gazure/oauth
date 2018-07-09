@@ -28,6 +28,8 @@ func EnsureLoggedIn(c *gin.Context) {
 
 func EnsureNotLoggedIn(c *gin.Context) {
 	if isLoggedIn(c) {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": "currently logged in",
+		})
 	}
 }

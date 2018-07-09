@@ -6,9 +6,9 @@ import (
 	"crypto/rsa"
 )
 
-func IssueJwt(clientId string, key *rsa.PrivateKey) (string, error) {
+func IssueJwt(sub string, key *rsa.PrivateKey) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"sub": clientId,
+		"sub": sub,
 		"nbf": time.Now().Unix(),
 		"exp": time.Now().Add(time.Hour).Unix(),
 	})

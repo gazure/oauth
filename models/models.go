@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"log"
 	"time"
+	"github.com/satori/go.uuid"
 )
 
 var db *gorm.DB
@@ -24,4 +25,9 @@ func Init() error {
 func Migrate() {
 	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&User{})
 	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&Client{})
+}
+
+func newUuid() []byte {
+	id, _ := uuid.NewV4().MarshalBinary()
+	return id
 }

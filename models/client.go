@@ -37,9 +37,8 @@ func (c *Client) ToDTO() gin.H {
 }
 
 func CreateClient(name string, description string) *Client {
-	id, _ := uuid.NewV4().MarshalBinary()
-	secret := make([]byte, 32)
-	rand.Read(secret)
+	id := newUuid()
+	secret := newSecret()
 	client := &Client{Id: id, Name: name, Description: description, Secret: secret}
 	db.Create(client)
 	return client
@@ -49,4 +48,23 @@ func GetClient(id uuid.UUID) *Client {
 	var client Client
 	db.Where(&Client{Id: id.Bytes()}).First(&client)
 	return &client
+}
+
+func GetAllClients() []Client{
+	clients := make([]Client, 0)
+	db.Find(&clients)
+	return clients
+}
+
+func newSecret() []byte {
+	secret := make([]byte, 32)
+	rand.Read(secret)
+	return secret
+}
+
+func GenerateNewSecret(id uuid.UUID) *Client {
+	client := GetClient(id)
+	client.Secret = newSecret()
+	db.Save(client)
+	return client
 }

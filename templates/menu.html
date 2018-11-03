@@ -7,5 +7,33 @@
                 Home
             </a>
         </div>
+        {{ if .isLoggedIn }}
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/dog/show">
+                    Dogs
+                </a>
+            </div>
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/dog/create">
+                   Create Dog
+                </a>
+            </div>
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/u/logout">
+                    Logout
+                </a>
+            </div>
+        {{ else }}
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/u/register">
+                   Register
+                </a>
+            </div>
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/u/login">
+                    Login
+                </a>
+            </div>
+        {{end}}
     </div>
 </nav>

@@ -9,6 +9,7 @@ type User struct {
 	Id       []byte
 	Name     string `gorm:"unique_index"`
 	PasswordHash string
+	Dogs []Dog `gorm:"foreignkey:OwnerId"`
 }
 
 func (u *User) GetId() string {
@@ -36,6 +37,22 @@ func CreateUser(name string, password string) *User {
 	user = &User{Id: id, Name: name, PasswordHash: passwordHash}
 	db.Create(user)
 	return user
+}
+
+func GetUserById(id string) *User {
+	userUuid, err := uuid.FromString(id)
+	if err != nil {
+		return nil
+	}
+
+	userUuidBytes, _ := userUuid.MarshalBinary()
+	if err != nil {
+		return nil
+	}
+
+	var user User
+	db.Where(&User{Id: userUuidBytes}).First(&user)
+	return &user
 }
 
 func GetUser(name string) *User {

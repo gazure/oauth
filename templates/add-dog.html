@@ -1,0 +1,31 @@
+<!--index.html-->
+
+<!--Embed the header.html template at this location-->
+{{ template "header.html" .}}
+
+<h1>Add a Dog</h1>
+
+<div class="panel panel-default col-sm-6">
+    <div class="panel-body">
+        <!--If there's an error, display the error-->
+    {{ if .ErrorTitle}}
+        <p class="bg-danger">
+        {{.ErrorTitle}}: {{.ErrorMessage}}
+        </p>
+    {{end}}
+        <!--Create a form that POSTs to the `/dogs/create` route-->
+        <form class="form" action="/dog/create" method="POST">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control" id="name" name="name" placeholder="Name">
+            </div>
+            <div class="form-group">
+                <label for="breed">Breed</label>
+                <input type="text" class="form-control" id="breed" name="breed" placeholder="Breed">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Dog</button>
+        </form>
+    </div>
+</div>
+<!--Embed the footer.html template at this location-->
+{{ template "footer.html" .}}

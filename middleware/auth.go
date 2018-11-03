@@ -5,31 +5,29 @@ import (
 	"net/http"
 )
 
-const IsLoggedIn = "is_logged_in"
+const isLoggedIn = "is_logged_in"
 
 func SetUserStatus(c *gin.Context) {
 	if token, err := c.Cookie("token"); err == nil || token != "" {
-		c.Set(IsLoggedIn, true)
+		c.Set(isLoggedIn, true)
 	} else {
-		c.Set(IsLoggedIn, false)
+		c.Set(isLoggedIn, false)
 	}
 }
 
-func isLoggedIn(c *gin.Context) bool {
-	loggedInInteface, _ := c.Get(IsLoggedIn)
+func IsLoggedIn(c *gin.Context) bool {
+	loggedInInteface, _ := c.Get(isLoggedIn)
 	return loggedInInteface.(bool)
 }
 
 func EnsureLoggedIn(c *gin.Context) {
-	if !isLoggedIn(c) {
-		c.AbortWithStatus(http.StatusUnauthorized)
+	if !IsLoggedIn(c) {
+		c.Redirect(http.StatusFound, "/u/login")
 	}
 }
 
 func EnsureNotLoggedIn(c *gin.Context) {
-	if isLoggedIn(c) {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"error": "currently logged in",
-		})
+	if IsLoggedIn(c) {
+		c.Redirect(http.StatusFound, "/")
 	}
 }

@@ -1,11 +1,10 @@
 package routes
 
 import (
+	"github.com/gazure/oauth/models"
+	"github.com/gazure/oauth/token-generators"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"github.com/gazure/oauth/token-generators"
-	"github.com/gazure/oauth/models"
-	"github.com/satori/go.uuid"
 )
 
 const httpAccept = "Accept"
@@ -30,30 +29,52 @@ func showRegistrationPage(c *gin.Context) {
 	)
 }
 
+func setLoginCookie(c *gin.Context, user *models.User) error {
+	token, err := token_generators.IssueJwt(user.GetId(), rsaCertificate)
+	if err != nil {
+		return err
+	}
+	c.SetCookie("id", user.GetId(), 3600, "","", false, true)
+	c.SetCookie("token", token, 3600, "", "", false, true)
+	c.Set("is_logged_in", true)
+	return nil
+}
+
 func performLogin(c *gin.Context) {
-	showLoginPage(c)
+	errorParams := gin.H{
+		"status":       "login unsuccessful",
+		"ErrorTitle:":  "Login Failed",
+		"ErrorMessage": "User name or password does not match our records",
+	}
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+
+	user := models.GetUser(username)
+	if user == nil || !user.PasswordMatch(password) {
+		Render(c, 401, "login.html", errorParams)
+	} else {
+		setLoginCookie(c, user)
+		Render(c, 200, "login-successful.html", gin.H{"title": "Login successful"})
+	}
 }
 
 func performRegistration(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	if user := models.CreateUser(username, password); user != nil{
-		id, _ := uuid.FromBytes(user.Id)
-		token, _ := token_generators.IssueJwt(id.String(), rsaCertificate)
-		c.SetCookie("token", token, 3600, "", "", false, true)
-		c.Set("is_logged_in", true)
-		render(c, http.StatusOK, gin.H{
-			"title": "successful registration",
+	if user := models.CreateUser(username, password); user != nil {
+		setLoginCookie(c, user)
+		Render(c, http.StatusOK, "login-successful.html", gin.H{
+			"title":  "successful registration",
 			"status": "SUCCESS",
-		}, "login-successful.html")
+		})
 	} else {
 		data := gin.H{
 			"status":       "Registration failed",
 			"ErrorTitle":   "Registration failed",
 			"ErrorMessage": "We don't really know!",
 		}
-		render(c, http.StatusBadRequest, data, "register.html")
+		Render(c, http.StatusBadRequest, "register.html", data)
 	}
 }
 
@@ -63,16 +84,4 @@ func logout(c *gin.Context) {
 
 	// Redirect to the home page
 	c.Redirect(http.StatusTemporaryRedirect, "/")
-}
-
-func render(c *gin.Context, statusCode int, data gin.H, templateName string) {
-	loggedInInterface, _ := c.Get("is_logged_in")
-	data["is_logged_in"] = loggedInInterface.(bool)
-
-	switch c.Request.Header.Get(httpAccept) {
-	case gin.MIMEJSON:
-		c.JSON(statusCode, data)
-	default:
-		c.HTML(statusCode, templateName, data)
-	}
 }

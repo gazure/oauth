@@ -1,0 +1,22 @@
+{{ template "header.html" .}}
+
+<table class="table">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Owner</th>
+            <th scope="col">Added On</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .dogs }}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Breed}}</td>
+            <td>{{.AddedOn}}</td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+
+{{ template "footer.html" .}}

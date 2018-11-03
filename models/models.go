@@ -31,6 +31,7 @@ func Init() error {
 func Migrate() {
 	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&User{})
 	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&Client{})
+	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&Dog{})
 }
 
 func newUuid() []byte {

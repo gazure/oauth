@@ -11,6 +11,7 @@ type Client struct {
 	Id []byte
 	Name string
 	Description string
+	RedirectURI string
 	Secret []byte
 }
 
@@ -33,13 +34,14 @@ func (c *Client) ToDTO() gin.H {
 		"secret": c.GetSecret(),
 		"name": c.Name,
 		"description": c.Description,
+		"redirect_url": c.RedirectURI,
 	}
 }
 
 func CreateClient(name string, description string) *Client {
 	id := newUuid()
 	secret := newSecret()
-	client := &Client{Id: id, Name: name, Description: description, Secret: secret}
+	client := &Client{Id: id, Name: name, Description: description, RedirectURI: "", Secret: secret}
 	db.Create(client)
 	return client
 }

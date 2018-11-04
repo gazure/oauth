@@ -17,6 +17,13 @@ services:
             context: ./
         ports:
             - "8080:8080"
+    
+    oauth_client:
+        image: oauth-client:latest
+        environment:
+            - AUTH_URL=http://localhost:8080
+        ports:
+            - "8000:8080"
 
 volumes:
     data:

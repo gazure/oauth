@@ -58,6 +58,8 @@ func ConfigureRoutes(r *gin.Engine) {
 		oauthRoutes.POST("/client/register", registerNewClient)
 		oauthRoutes.GET("/clients", listClients)
 		oauthRoutes.POST("/clients/newSecret", generateNewSecret)
+		oauthRoutes.GET("/authorize", showAuthorize)
+		oauthRoutes.POST("/authorize", handleAuthorize)
 	}
 	userRoutes := r.Group("/u")
 	{

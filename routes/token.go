@@ -2,12 +2,12 @@ package routes
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/gazure/oauth/token-generators"
 	"github.com/gazure/oauth/models"
-	"net/http"
+	"github.com/gazure/oauth/token-generators"
+	"github.com/gin-gonic/gin"
 	"github.com/satori/go.uuid"
 	"log"
+	"net/http"
 )
 
 const paramClientId = "client_id"

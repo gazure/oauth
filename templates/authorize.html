@@ -1,0 +1,21 @@
+<!--login.html-->
+
+<!--Embed the header.html template at this location-->
+{{ template "header.html" .}}
+
+<h1>Login</h1>
+<div class="panel panel-default col-sm-6">
+    <div class="panel-body">
+        <!--Create a form that POSTs to the `/u/login` route-->
+        <form class="form" action="/oauth/authorize" method="POST">
+            <input type="hidden" name="clientId" value="{{ .clientId }}">
+            <input type="hidden" name="scope" value="{{ .scope }}">
+            <input type="hidden" name="state" value="{{ .state }}">
+            <input type="hidden" name="redirectUrl" value="{{ .redirectUrl}}">
+            <button type="submit" class="btn btn-primary">Authorize</button>
+        </form>
+    </div>
+</div>
+
+<!--Embed the footer.html template at this location-->
+{{ template "footer.html" .}}

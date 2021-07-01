@@ -1,11 +1,12 @@
-FROM golang:1.10
+FROM golang:1.16
 
 WORKDIR /go/src/github.com/gazure/oauth
-RUN go get -d -v golang.org/x/net/html \
-    && go get -u github.com/golang/dep/...
-COPY Gopkg.lock .
-COPY Gopkg.toml .
-RUN dep ensure --vendor-only
+RUN go get -d -v golang.org/x/net/html
+
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
